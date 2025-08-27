@@ -7,6 +7,22 @@
 - Click "New Project" and import your `FreelanceTrack` repository
 - Vercel will auto-detect Next.js configuration
 
+### 2. Initial Environment Variables
+Add these environment variables FIRST (before deploying):
+- `DATABASE_URL` = your Neon PostgreSQL connection string
+- `NEXTAUTH_SECRET` = a long random string
+- `NODE_ENV` = production
+
+### 3. First Deployment
+- Click "Deploy" 
+- Wait for deployment to complete
+- Note the URL Vercel provides (e.g., `https://freelancetrack-abc123.vercel.app`)
+
+### 4. Add NEXTAUTH_URL
+- Go to Project Settings > Environment Variables
+- Add `NEXTAUTH_URL` with your actual Vercel URL
+- Redeploy or push a new commit
+
 ### 2. Environment Variables Configuration
 In your Vercel project settings, add these environment variables:
 

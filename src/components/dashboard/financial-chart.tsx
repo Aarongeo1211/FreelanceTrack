@@ -16,6 +16,21 @@ interface ChartDataPoint {
 export function FinancialChart() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [chartReady, setChartReady] = useState(false)
+
+  useEffect(() => {
+    // Ensure Chart.js is ready
+    const initChart = async () => {
+      try {
+        await import('@/lib/chart-config')
+        setChartReady(true)
+      } catch (error) {
+        console.error('Failed to initialize Chart.js:', error)
+      }
+    }
+    
+    initChart()
+  }, [])
 
   useEffect(() => {
     const fetchChartData = async () => {
@@ -32,10 +47,12 @@ export function FinancialChart() {
       }
     }
 
-    fetchChartData()
-  }, [])
+    if (chartReady) {
+      fetchChartData()
+    }
+  }, [chartReady])
 
-  if (isLoading) {
+  if (isLoading || !chartReady) {
     return (
       <Card>
         <CardHeader>
