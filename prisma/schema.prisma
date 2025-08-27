@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(FREELANCER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clients   Client[]
+  projects  Project[]
+  tasks     Task[]
+  workers   Worker[]
+  payments  Payment[]
+
+  @@map("users")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  company     String?
+  address     String?
+  notes       String?
+  status      ClientStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects    Project[]
+  payments    Payment[]
+
+  @@map("clients")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  hourlyRate  Float?
+  totalCost   Float         @default(0)
+  paidAmount  Float         @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userId      String
+  clientId    String
+
+  // Relations
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client      Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  payments    Payment[]
+
+  @@map("projects")
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  estimatedHours Float?
+  actualHours    Float     @default(0)
+  hourlyRate     Float?
+  cost           Float     @default(0)
+  dueDate        DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  userId         String
+  projectId      String
+  assignedToId   String?
+
+  // Relations
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo     Worker?   @relation(fields: [assignedToId], references: [id])
+
+  @@map("tasks")
+}
+
+model Worker {
+  id          String       @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  skills      String?
+  hourlyRate  Float?
+  totalEarned Float        @default(0)
+  totalPaid   Float        @default(0)
+  status      WorkerStatus @default(ACTIVE)
+  joinedAt    DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userId      String
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+  payments    Payment[]
+
+  @@map("workers")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  amount      Float
+  type        PaymentType
+  status      PaymentStatus @default(PENDING)
+  description String?
+  dueDate     DateTime?
+  paidDate    DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userId      String
+  clientId    String?
+  projectId   String?
+  workerId    String?
+
+  // Relations
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client      Client?       @relation(fields: [clientId], references: [id])
+  project     Project?      @relation(fields: [projectId], references: [id])
+  worker      Worker?       @relation(fields: [workerId], references: [id])
+
+  @@map("payments")
+}
+
+// Enums
+enum Role {
+  FREELANCER
+  ADMIN
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkerStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum PaymentType {
+  INCOMING  // From clients
+  OUTGOING  // To workers
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
