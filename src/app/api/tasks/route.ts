@@ -15,6 +15,29 @@ const taskSchema = z.object({
   dueDate: z.string().optional(),
 })
 
+// Helper function to update project's totalCost
+async function updateProjectTotalCost(projectId: string) {
+  if (!projectId) return
+  
+  // Calculate total cost from all tasks in this project
+  const totalCostResult = await db.task.aggregate({
+    where: {
+      projectId
+    },
+    _sum: {
+      cost: true
+    }
+  })
+
+  // Update project's totalCost
+  await db.project.update({
+    where: { id: projectId },
+    data: {
+      totalCost: totalCostResult._sum.cost || 0
+    }
+  })
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -162,6 +185,9 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Update project's totalCost
+    await updateProjectTotalCost(validatedData.projectId)
 
     return NextResponse.json(task, { status: 201 })
 

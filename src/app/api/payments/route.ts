@@ -16,6 +16,30 @@ const paymentSchema = z.object({
   paidDate: z.string().optional(),
 })
 
+// Helper function to update project's paidAmount
+async function updateProjectPaidAmount(projectId: string) {
+  if (!projectId) return
+  
+  // Calculate total paid amount for this project
+  const paidAmount = await db.payment.aggregate({
+    where: {
+      projectId,
+      status: 'PAID'
+    },
+    _sum: {
+      amount: true
+    }
+  })
+
+  // Update project's paidAmount
+  await db.project.update({
+    where: { id: projectId },
+    data: {
+      paidAmount: paidAmount._sum.amount || 0
+    }
+  })
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -181,6 +205,11 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Update project's paidAmount if payment is linked to a project
+    if (validatedData.projectId) {
+      await updateProjectPaidAmount(validatedData.projectId)
+    }
 
     return NextResponse.json(payment, { status: 201 })
 

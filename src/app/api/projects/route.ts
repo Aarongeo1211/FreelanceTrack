@@ -36,6 +36,17 @@ export async function GET(request: NextRequest) {
             company: true
           }
         },
+        tasks: {
+          select: {
+            cost: true
+          }
+        },
+        payments: {
+          select: {
+            amount: true,
+            status: true
+          }
+        },
         _count: {
           select: { 
             tasks: true,
@@ -46,7 +57,34 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json(projects)
+    // Calculate totalCost and paidAmount for each project
+    const projectsWithCalculations = projects.map((project: any) => {
+      const totalCost = project.tasks.reduce((sum: number, task: any) => sum + (task.cost || 0), 0)
+      const paidAmount = project.payments
+        .filter((payment: any) => payment.status === 'PAID')
+        .reduce((sum: number, payment: any) => sum + payment.amount, 0)
+      
+      // Update the project in database if values have changed
+      if (project.totalCost !== totalCost || project.paidAmount !== paidAmount) {
+        db.project.update({
+          where: { id: project.id },
+          data: {
+            totalCost,
+            paidAmount
+          }
+        }).catch(console.error) // Don't await to avoid blocking the response
+      }
+
+      return {
+        ...project,
+        totalCost,
+        paidAmount,
+        tasks: undefined, // Remove tasks from response
+        payments: undefined // Remove payments from response
+      }
+    })
+
+    return NextResponse.json(projectsWithCalculations)
 
   } catch (error) {
     console.error('Get projects error:', error)
