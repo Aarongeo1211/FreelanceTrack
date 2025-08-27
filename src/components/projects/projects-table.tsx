@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
-import { FolderOpen, Calendar, DollarSign, User } from 'lucide-react'
+import { FolderOpen, Calendar, DollarSign, User, ChevronDown, Edit3 } from 'lucide-react'
 
 interface Project {
   id: string
@@ -34,6 +34,7 @@ interface Project {
 export function ProjectsTable() {
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -65,6 +66,38 @@ export function ProjectsTable() {
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const updateProjectStatus = async (projectId: string, newStatus: string) => {
+    setUpdatingStatus(projectId)
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        // Update the project in the local state
+        setProjects(prevProjects => 
+          prevProjects.map(project => 
+            project.id === projectId 
+              ? { ...project, status: newStatus }
+              : project
+          )
+        )
+      } else {
+        console.error('Failed to update project status')
+        alert('Failed to update project status')
+      }
+    } catch (error) {
+      console.error('Failed to update project status:', error)
+      alert('Failed to update project status')
+    } finally {
+      setUpdatingStatus(null)
     }
   }
 
@@ -106,9 +139,42 @@ export function ProjectsTable() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-medium text-gray-900">{project.name}</h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                        {project.status.replace('_', ' ')}
-                      </span>
+                      
+                      {/* Status Management */}
+                      <div className="relative group">
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                            {project.status.replace('_', ' ')}
+                          </span>
+                          <button
+                            className="p-1 rounded-full hover:bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Change Status"
+                          >
+                            <Edit3 className="w-3 h-3 text-gray-500" />
+                          </button>
+                        </div>
+                        
+                        {/* Status Dropdown */}
+                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                          <div className="py-1">
+                            {['ACTIVE', 'COMPLETED', 'ON_HOLD', 'CANCELLED'].map((status) => (
+                              <button
+                                key={status}
+                                onClick={() => updateProjectStatus(project.id, status)}
+                                disabled={updatingStatus === project.id || project.status === status}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  project.status === status ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                                }`}
+                              >
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mr-2 ${getStatusColor(status)}`}>
+                                  {status.replace('_', ' ')}
+                                </span>
+                                {status === project.status && '(Current)'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">

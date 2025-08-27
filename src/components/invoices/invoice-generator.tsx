@@ -220,6 +220,12 @@ export function InvoiceGenerator() {
     .filter(project => selectedProjectIds.includes(project.id))
     .reduce((sum, project) => sum + project.totalCost, 0)
 
+  const getSelectedOutstanding = () => {
+    return projects
+      .filter(project => selectedProjectIds.includes(project.id))
+      .reduce((sum, project) => sum + (project.totalCost - project.paidAmount), 0)
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -276,6 +282,13 @@ export function InvoiceGenerator() {
               <div className="text-lg font-bold text-green-600">
                 {formatCurrency(selectedTotal)}
               </div>
+              {selectedProjectIds.length > 0 && (
+                <div className="mt-1">
+                  <div className="text-sm text-gray-600">
+                    Outstanding: {formatCurrency(getSelectedOutstanding())}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -311,6 +324,14 @@ export function InvoiceGenerator() {
                   <strong>Note:</strong> You can only select multiple projects from the same client. 
                   {selectedProjectIds.length > 1 && `Currently selected: ${selectedProjectIds.length} projects`}
                 </p>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <div>
+                    <span className="text-blue-700 font-medium">Total Amount: {formatCurrency(selectedTotal)}</span>
+                  </div>
+                  <div>
+                    <span className="text-red-700 font-medium">Outstanding: {formatCurrency(getSelectedOutstanding())}</span>
+                  </div>
+                </div>
               </div>
             )}
             
@@ -358,8 +379,10 @@ export function InvoiceGenerator() {
                       <div className="space-y-2">
                         {group.projects.map((project) => {
                           const projectAmount = project.totalCost
+                          const outstandingAmount = project.totalCost - project.paidAmount
                           const isSelected = selectedProjectIds.includes(project.id)
                           const isDisabled = isClientDisabled
+                          const hasOutstanding = outstandingAmount > 0
                           
                           return (
                             <div
@@ -382,22 +405,44 @@ export function InvoiceGenerator() {
                                     {project.description && (
                                       <p className="text-xs text-gray-500 truncate max-w-xs">{project.description}</p>
                                     )}
-                                    {project.paidAmount > 0 && (
-                                      <p className="text-xs text-blue-600">
-                                        Paid: {formatCurrency(project.paidAmount)} | Outstanding: {formatCurrency(project.totalCost - project.paidAmount)}
-                                      </p>
-                                    )}
+                                    
+                                    {/* Payment Status Information */}
+                                    <div className="flex items-center space-x-4 mt-1">
+                                      {project.paidAmount > 0 && (
+                                        <p className="text-xs text-green-600">
+                                          Paid: {formatCurrency(project.paidAmount)}
+                                        </p>
+                                      )}
+                                      {hasOutstanding && (
+                                        <p className="text-xs font-medium text-red-600">
+                                          Outstanding: {formatCurrency(outstandingAmount)}
+                                        </p>
+                                      )}
+                                      {!hasOutstanding && project.paidAmount > 0 && (
+                                        <span className="text-xs font-medium text-green-600">✓ Fully Paid</span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="text-right">
                                   <div className="text-lg font-medium text-gray-900">
                                     {formatCurrency(projectAmount)}
                                   </div>
+                                  {hasOutstanding && (
+                                    <div className="text-sm font-medium text-red-600">
+                                      {formatCurrency(outstandingAmount)} due
+                                    </div>
+                                  )}
                                   <div className="text-xs text-gray-500">
                                     {project._count.tasks} task{project._count.tasks !== 1 ? 's' : ''}
                                   </div>
-                                  <div className="text-xs text-gray-500">
-                                    Status: {project.status}
+                                  <div className={`text-xs font-medium ${
+                                    project.status === 'ACTIVE' ? 'text-green-600' :
+                                    project.status === 'COMPLETED' ? 'text-blue-600' :
+                                    project.status === 'ON_HOLD' ? 'text-yellow-600' :
+                                    'text-gray-600'
+                                  }`}>
+                                    {project.status.replace('_', ' ')}
                                   </div>
                                 </div>
                               </div>
@@ -534,9 +579,19 @@ export function InvoiceGenerator() {
                     <span>{formatCurrency(invoiceData.subtotal)}</span>
                   </div>
                   <div className="flex justify-between py-2 text-lg font-bold">
-                    <span>Total:</span>
+                    <span>Total Amount:</span>
                     <span>{formatCurrency(invoiceData.total)}</span>
                   </div>
+                  {/* Show outstanding amount if any */}
+                  {(() => {
+                    const outstandingAmount = getSelectedOutstanding()
+                    return outstandingAmount > 0 ? (
+                      <div className="flex justify-between py-2 border-t border-gray-200 text-red-600 font-medium">
+                        <span>Amount Due:</span>
+                        <span>{formatCurrency(outstandingAmount)}</span>
+                      </div>
+                    ) : null
+                  })()}
                 </div>
               </div>
 
