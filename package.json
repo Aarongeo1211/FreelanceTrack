@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "postinstall": "prisma generate",
+    "vercel-build": "next build && prisma db push",
     "deploy": "npm run build && npm run db:push",
     "docker:build": "docker build -t freelancetrack .",
     "docker:run": "docker run -p 3000:3000 freelancetrack",
