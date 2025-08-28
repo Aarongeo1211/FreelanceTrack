@@ -1,17 +1,35 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { DashboardStats } from '@/components/dashboard/dashboard-stats'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { FinancialChart } from '@/components/dashboard/financial-chart'
+import { useSession } from 'next-auth/react'
+import { redirect } from 'next/navigation'
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
+export default function DashboardPage() {
+  const { data: session, status } = useSession()
+
+  useEffect(() => {
+    const updatePaymentStatus = async () => {
+      try {
+        await fetch('/api/payments/update-status', { method: 'POST' });
+      } catch (error) {
+        console.error('Failed to update payment statuses:', error);
+      }
+    };
+
+    updatePaymentStatus();
+  }, []);
+
+  if (status === 'loading') {
+    return <div>Loading...</div>; // Or a proper loading skeleton
+  }
 
   if (!session) {
-    redirect('/auth/signin')
+    redirect('/auth/signin');
   }
 
   return (

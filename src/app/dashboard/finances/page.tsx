@@ -1,5 +1,7 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { FinanceOverview } from '@/components/finances/finance-overview'
@@ -8,11 +10,27 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 
-export default async function FinancesPage() {
-  const session = await getServerSession(authOptions)
+export default function FinancesPage() {
+  const { data: session, status } = useSession()
+
+  useEffect(() => {
+    const updatePaymentStatus = async () => {
+      try {
+        await fetch('/api/payments/update-status', { method: 'POST' });
+      } catch (error) {
+        console.error('Failed to update payment statuses:', error);
+      }
+    };
+
+    updatePaymentStatus();
+  }, []);
+
+  if (status === 'loading') {
+    return <div>Loading...</div>; // Or a proper loading skeleton
+  }
 
   if (!session) {
-    redirect('/auth/signin')
+    redirect('/auth/signin');
   }
 
   return (
