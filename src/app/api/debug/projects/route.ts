@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
     })
 
     // Add calculations for debugging
-    const debugData = projects.map(project => {
-      const tasksCost = project.tasks.reduce((sum, task) => sum + (task.cost || 0), 0)
+    const debugData = projects.map((project: any) => {
+      const tasksCost = project.tasks.reduce((sum: number, task: any) => sum + (task.cost || 0), 0)
       const paidAmount = project.payments
-        .filter(payment => payment.status === 'PAID')
-        .reduce((sum, payment) => sum + payment.amount, 0)
+        .filter((payment: any) => payment.status === 'PAID')
+        .reduce((sum: number, payment: any) => sum + payment.amount, 0)
       
       // Use budget as totalCost if no tasks with costs exist
       const finalTotalCost = tasksCost > 0 ? tasksCost : (project.budget || 0)
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         hasTasksWithCosts: tasksCost > 0,
         usingBudgetAsCost: tasksCost === 0 && project.budget > 0,
         client: project.client,
-        tasks: project.tasks.map(task => ({
+        tasks: project.tasks.map((task: any) => ({
           id: task.id,
           title: task.title,
           cost: task.cost,
