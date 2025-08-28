@@ -144,6 +144,11 @@ export async function POST(request: NextRequest) {
             cost: true,
             completedAt: true
           }
+        },
+        payments: {
+          select: {
+            status: true
+          }
         }
       }
     })
@@ -171,11 +176,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Filter projects that have pending or overdue payments
+    const projectsWithPendingPayments = projects.filter(project =>
+      project.payments.some(p => p.status === 'PENDING' || p.status === 'OVERDUE')
+    );
+
+    if (projectsWithPendingPayments.length === 0) {
+      return NextResponse.json(
+        { error: 'No projects with pending or overdue payments found' },
+        { status: 404 }
+      );
+    }
+
     // Calculate totals
     let subtotal = 0
     const lineItems: LineItem[] = []
 
-    projects.forEach((project) => {
+    projectsWithPendingPayments.forEach((project) => {
       // Add project as a line item
       const lineItem: LineItem = {
         type: 'project',
@@ -220,10 +237,10 @@ export async function POST(request: NextRequest) {
       },
       
       // Client information (using first project's client)
-      client: projects[0].client,
+      client: projectsWithPendingPayments[0].client,
       
       // Project details
-      projects: projects.map((project) => ({
+      projects: projectsWithPendingPayments.map((project) => ({
         id: project.id,
         name: project.name,
         description: project.description,
@@ -241,9 +258,9 @@ export async function POST(request: NextRequest) {
       total: subtotal,
       
       // Additional info
-      notes: validatedData.notes || (projects.length > 1 ? 
-        `Invoice for ${projects.length} projects: ${projects.map(p => p.name).join(', ')}` : 
-        `Invoice for project: ${projects[0].name}`),
+      notes: validatedData.notes || (projectsWithPendingPayments.length > 1 ? 
+        `Invoice for ${projectsWithPendingPayments.length} projects: ${projectsWithPendingPayments.map(p => p.name).join(', ')}` : 
+        `Invoice for project: ${projectsWithPendingPayments[0].name}`),
       
       // Payment terms
       paymentTerms: "Payment is due within 30 days of invoice date.",
