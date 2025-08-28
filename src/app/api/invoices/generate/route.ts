@@ -132,9 +132,6 @@ export async function POST(request: NextRequest) {
           }
         },
         tasks: {
-          where: {
-            status: 'COMPLETED'
-          },
           select: {
             id: true,
             title: true,
@@ -142,11 +139,13 @@ export async function POST(request: NextRequest) {
             actualHours: true,
             hourlyRate: true,
             cost: true,
-            completedAt: true
+            completedAt: true,
+            status: true
           }
         },
         payments: {
           select: {
+            amount: true,
             status: true
           }
         }
@@ -176,50 +175,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Filter projects that have pending or overdue payments
-    const projectsWithPendingPayments = projects.filter(project =>
-      project.payments.some(p => p.status === 'PENDING' || p.status === 'OVERDUE')
-    );
+    // Calculate totalCost and paidAmount for each project
+    const projectsWithCalculations = projects.map((project: any) => {
+      const tasksTotal = project.tasks.reduce((sum: number, task: any) => sum + (task.cost || 0), 0)
+      const paidAmount = project.payments
+        .filter((payment: any) => payment.status === 'PAID')
+        .reduce((sum: number, payment: any) => sum + payment.amount, 0)
+      
+      // Use budget as totalCost if no tasks with costs exist, otherwise use tasks total
+      const totalCost = tasksTotal > 0 ? tasksTotal : (project.budget || 0)
+      
+      return {
+        ...project,
+        totalCost,
+        paidAmount,
+        outstandingAmount: Math.max(0, totalCost - paidAmount)
+      }
+    })
 
-    if (projectsWithPendingPayments.length === 0) {
-      return NextResponse.json(
-        { error: 'No projects with pending or overdue payments found' },
-        { status: 404 }
-      );
-    }
-
-    // Calculate totals
+    // Calculate totals and create line items
     let subtotal = 0
     const lineItems: LineItem[] = []
 
-    projectsWithPendingPayments.forEach((project) => {
-      // Add project as a line item
-      const lineItem: LineItem = {
-        type: 'project',
-        description: `${project.name}${project.description ? ` - ${project.description}` : ''}`,
-        quantity: 1,
-        rate: project.totalCost,
-        amount: project.totalCost
+    projectsWithCalculations.forEach((project: any) => {
+      // Use the calculated totalCost for the invoice
+      const projectAmount = project.totalCost
+      
+      if (projectAmount > 0) {
+        const lineItem: LineItem = {
+          type: 'project',
+          description: `${project.name}${project.description ? ` - ${project.description}` : ''}`,
+          quantity: 1,
+          rate: projectAmount,
+          amount: projectAmount
+        }
+        lineItems.push(lineItem)
+        subtotal += projectAmount
       }
-      lineItems.push(lineItem)
-      subtotal += project.totalCost
 
-      // Optionally add completed tasks as detailed line items
-      // Uncomment if you want task-level breakdown
-      /*
-      project.tasks.forEach((task) => {
-        if (task.cost > 0) {
+      // Add completed tasks as detailed line items if they have costs
+      project.tasks.forEach((task: any) => {
+        if (task.cost > 0 && (task.status === 'COMPLETED' || task.actualHours > 0)) {
           const taskLineItem: LineItem = {
             type: 'task',
-            description: `  └─ ${task.title}`,
+            description: `  └─ ${task.title}${task.description ? ` - ${task.description}` : ''}`,
             quantity: task.actualHours || 1,
-            rate: task.hourlyRate || 0,
+            rate: task.hourlyRate || (task.cost / (task.actualHours || 1)),
             amount: task.cost
           }
           lineItems.push(taskLineItem)
         }
       })
-      */
     })
 
     // Generate invoice data
@@ -237,16 +243,16 @@ export async function POST(request: NextRequest) {
       },
       
       // Client information (using first project's client)
-      client: projectsWithPendingPayments[0].client,
+      client: projectsWithCalculations[0].client,
       
       // Project details
-      projects: projectsWithPendingPayments.map((project) => ({
+      projects: projectsWithCalculations.map((project: any) => ({
         id: project.id,
         name: project.name,
         description: project.description,
         status: project.status,
         totalCost: project.totalCost,
-        completedTasks: project.tasks.length
+        completedTasks: project.tasks.filter((t: any) => t.status === 'COMPLETED').length
       })),
       
       // Line items
@@ -258,9 +264,9 @@ export async function POST(request: NextRequest) {
       total: subtotal,
       
       // Additional info
-      notes: validatedData.notes || (projectsWithPendingPayments.length > 1 ? 
-        `Invoice for ${projectsWithPendingPayments.length} projects: ${projectsWithPendingPayments.map(p => p.name).join(', ')}` : 
-        `Invoice for project: ${projectsWithPendingPayments[0].name}`),
+      notes: validatedData.notes || (projectsWithCalculations.length > 1 ? 
+        `Invoice for ${projectsWithCalculations.length} projects: ${projectsWithCalculations.map((p: any) => p.name).join(', ')}` : 
+        `Invoice for project: ${projectsWithCalculations[0].name}`),
       
       // Payment terms
       paymentTerms: "Payment is due within 30 days of invoice date.",

@@ -59,10 +59,13 @@ export async function GET(request: NextRequest) {
 
     // Calculate totalCost and paidAmount for each project
     const projectsWithCalculations = projects.map((project: any) => {
-      const totalCost = project.tasks.reduce((sum: number, task: any) => sum + (task.cost || 0), 0)
+      const tasksTotal = project.tasks.reduce((sum: number, task: any) => sum + (task.cost || 0), 0)
       const paidAmount = project.payments
         .filter((payment: any) => payment.status === 'PAID')
         .reduce((sum: number, payment: any) => sum + payment.amount, 0)
+      
+      // Use budget as totalCost if no tasks with costs exist, otherwise use tasks total
+      const totalCost = tasksTotal > 0 ? tasksTotal : (project.budget || 0)
       
       // Update the project in database if values have changed
       if (project.totalCost !== totalCost || project.paidAmount !== paidAmount) {
