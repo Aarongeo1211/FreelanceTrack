@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
-import { FolderOpen, Calendar, DollarSign, User, ChevronDown, Edit3 } from 'lucide-react'
+import { FolderOpen, Calendar, DollarSign, User, ChevronDown, Edit3, Edit } from 'lucide-react'
 
 interface Project {
   id: string
@@ -204,6 +204,15 @@ export function ProjectsTable() {
                       <span>Total: {formatCurrency(project.totalCost)}</span>
                       <span>Paid: {formatCurrency(project.paidAmount)}</span>
                     </div>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2">
+                    <Link href={`/dashboard/projects/${project.id}/edit`}>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
