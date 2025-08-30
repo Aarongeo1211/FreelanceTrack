@@ -115,6 +115,8 @@ export function PaymentForm({ payment, isEditing = false }: PaymentFormProps) {
         paidDate: formData.paidDate || undefined,
       }
 
+      console.log('Sending payment update payload:', payload)
+
       const response = await fetch(isEditing ? `/api/payments/${payment.id}` : '/api/payments', {
         method: isEditing ? 'PATCH' : 'POST',
         headers: {
@@ -123,9 +125,13 @@ export function PaymentForm({ payment, isEditing = false }: PaymentFormProps) {
         body: JSON.stringify(payload),
       })
 
+      console.log('Payment update response status:', response.status)
+
       if (response.ok) {
-        // Trigger refresh of payments data in other components
-        window.dispatchEvent(new CustomEvent('refreshPayments'))
+        // Trigger refresh of payments data in other components with a small delay
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('refreshPayments'))
+        }, 100)
         router.push('/dashboard/finances')
       } else {
         const data = await response.json()

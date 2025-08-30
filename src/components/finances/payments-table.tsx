@@ -48,7 +48,7 @@ export function PaymentsTable() {
   const fetchPayments = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/payments')
+      const response = await fetch(`/api/payments?t=${Date.now()}`)
       if (response.ok) {
         const data = await response.json()
         setPayments(data)

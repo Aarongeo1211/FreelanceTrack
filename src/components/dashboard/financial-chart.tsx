@@ -32,23 +32,38 @@ export function FinancialChart() {
     initChart()
   }, [])
 
+  const fetchChartData = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`/api/dashboard/chart?t=${Date.now()}`)
+      if (response.ok) {
+        const data = await response.json()
+        setChartData(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch chart data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    const fetchChartData = async () => {
-      try {
-        const response = await fetch('/api/dashboard/chart')
-        if (response.ok) {
-          const data = await response.json()
-          setChartData(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch chart data:', error)
-      } finally {
-        setIsLoading(false)
+    if (chartReady) {
+      fetchChartData()
+    }
+  }, [chartReady])
+
+  // Listen for payment refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      if (chartReady) {
+        fetchChartData()
       }
     }
 
-    if (chartReady) {
-      fetchChartData()
+    window.addEventListener('refreshPayments', handleRefresh)
+    return () => {
+      window.removeEventListener('refreshPayments', handleRefresh)
     }
   }, [chartReady])
 

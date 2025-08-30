@@ -32,7 +32,7 @@ export function FinanceOverview() {
   const fetchStats = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/payments/stats')
+      const response = await fetch(`/api/payments/stats?t=${Date.now()}`)
       if (response.ok) {
         const data = await response.json()
         setStats(data)

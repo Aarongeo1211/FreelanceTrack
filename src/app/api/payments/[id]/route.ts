@@ -124,7 +124,9 @@ export async function PATCH(
     }
 
     const body = await request.json()
+    console.log('Payment update request body:', body)
     const validatedData = updatePaymentSchema.parse(body)
+    console.log('Validated payment data:', validatedData)
 
     // Validate relationships if they are being updated
     if (validatedData.clientId) {
@@ -226,6 +228,8 @@ export async function PATCH(
         }
       }
     })
+
+    console.log('Payment updated successfully:', { id: payment.id, status: payment.status, amount: payment.amount })
 
     // Update project's paidAmount if payment is linked to a project
     if (payment.projectId) {

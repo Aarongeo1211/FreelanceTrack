@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FreelanceTrack Favicon</title>
+    <style>
+        canvas { 
+            border: 1px solid #ccc; 
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>FreelanceTrack Favicon Generator</h2>
+    <canvas id="favicon" width="32" height="32"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('favicon');
+        const ctx = canvas.getContext('2d');
+        
+        // Background
+        ctx.fillStyle = '#3B82F6';
+        ctx.fillRect(0, 0, 32, 32);
+        
+        // Rounded corners effect
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.fillStyle = '#000';
+        ctx.roundRect(0, 0, 32, 32, 6);
+        ctx.fill();
+        
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // Document lines
+        ctx.fillStyle = 'white';
+        ctx.fillRect(6, 8, 16, 2);
+        ctx.fillRect(6, 12, 12, 2);
+        ctx.fillRect(6, 16, 16, 2);
+        ctx.fillRect(6, 20, 10, 2);
+        
+        // Check circle
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        ctx.arc(22, 18, 3, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Check mark
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(21, 18);
+        ctx.lineTo(22, 19);
+        ctx.lineTo(24, 17);
+        ctx.stroke();
+    </script>
+</body>
+</html>
