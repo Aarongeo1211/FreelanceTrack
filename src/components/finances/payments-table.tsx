@@ -45,23 +45,36 @@ export function PaymentsTable() {
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'INCOMING' | 'OUTGOING'>('ALL')
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'PAID' | 'OVERDUE'>('ALL')
 
-  useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const response = await fetch('/api/payments')
-        if (response.ok) {
-          const data = await response.json()
-          setPayments(data)
-          setFilteredPayments(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch payments:', error)
-      } finally {
-        setIsLoading(false)
+  const fetchPayments = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/payments')
+      if (response.ok) {
+        const data = await response.json()
+        setPayments(data)
+        setFilteredPayments(data)
       }
+    } catch (error) {
+      console.error('Failed to fetch payments:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPayments()
+  }, [])
+
+  // Listen for custom refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchPayments()
     }
 
-    fetchPayments()
+    window.addEventListener('refreshPayments', handleRefresh)
+    return () => {
+      window.removeEventListener('refreshPayments', handleRefresh)
+    }
   }, [])
 
   useEffect(() => {
@@ -134,6 +147,8 @@ export function PaymentsTable() {
         // Remove the payment from state
         setPayments(prev => prev.filter(p => p.id !== paymentId))
         setFilteredPayments(prev => prev.filter(p => p.id !== paymentId))
+        // Trigger refresh of finance overview
+        window.dispatchEvent(new CustomEvent('refreshPayments'))
       } else {
         const errorData = await response.json()
         alert(errorData.error || 'Failed to delete payment')

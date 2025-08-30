@@ -124,6 +124,8 @@ export function PaymentForm({ payment, isEditing = false }: PaymentFormProps) {
       })
 
       if (response.ok) {
+        // Trigger refresh of payments data in other components
+        window.dispatchEvent(new CustomEvent('refreshPayments'))
         router.push('/dashboard/finances')
       } else {
         const data = await response.json()

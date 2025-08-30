@@ -29,22 +29,35 @@ export function FinanceOverview() {
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/api/payments/stats')
-        if (response.ok) {
-          const data = await response.json()
-          setStats(data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch finance stats:', error)
-      } finally {
-        setIsLoading(false)
+  const fetchStats = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/payments/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
       }
+    } catch (error) {
+      console.error('Failed to fetch finance stats:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  // Listen for custom refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchStats()
     }
 
-    fetchStats()
+    window.addEventListener('refreshPayments', handleRefresh)
+    return () => {
+      window.removeEventListener('refreshPayments', handleRefresh)
+    }
   }, [])
 
   const statCards = [
