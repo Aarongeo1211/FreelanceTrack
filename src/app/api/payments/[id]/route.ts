@@ -7,10 +7,82 @@ import { z } from 'zod'
 const updatePaymentSchema = z.object({
   status: z.enum(['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']).optional(),
   amount: z.number().positive().optional(),
+  type: z.enum(['INCOMING', 'OUTGOING']).optional(),
   description: z.string().optional(),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  workerId: z.string().optional(),
   dueDate: z.string().optional(),
   paidDate: z.string().optional(),
 })
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const payment = await db.payment.findFirst({
+      where: {
+        id: id,
+        userId: session.user.id,
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            company: true
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            client: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        worker: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    })
+
+    if (!payment) {
+      return NextResponse.json(
+        { error: 'Payment not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(payment)
+
+  } catch (error) {
+    console.error('Get payment error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
 
 // Helper function to update project's paidAmount
 async function updateProjectPaidAmount(projectId: string) {
@@ -54,6 +126,52 @@ export async function PATCH(
     const body = await request.json()
     const validatedData = updatePaymentSchema.parse(body)
 
+    // Validate relationships if they are being updated
+    if (validatedData.clientId) {
+      const client = await db.client.findFirst({
+        where: {
+          id: validatedData.clientId,
+          userId: session.user.id
+        }
+      })
+      if (!client) {
+        return NextResponse.json(
+          { error: 'Client not found' },
+          { status: 404 }
+        )
+      }
+    }
+
+    if (validatedData.projectId) {
+      const project = await db.project.findFirst({
+        where: {
+          id: validatedData.projectId,
+          userId: session.user.id
+        }
+      })
+      if (!project) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        )
+      }
+    }
+
+    if (validatedData.workerId) {
+      const worker = await db.worker.findFirst({
+        where: {
+          id: validatedData.workerId,
+          userId: session.user.id
+        }
+      })
+      if (!worker) {
+        return NextResponse.json(
+          { error: 'Worker not found' },
+          { status: 404 }
+        )
+      }
+    }
+
     // Check if payment exists and belongs to user
     const existingPayment = await db.payment.findFirst({
       where: {
@@ -73,6 +191,9 @@ export async function PATCH(
       where: { id: id },
       data: {
         ...validatedData,
+        clientId: validatedData.clientId || null,
+        projectId: validatedData.projectId || null,
+        workerId: validatedData.workerId || null,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : undefined,
         paidDate: validatedData.paidDate ? new Date(validatedData.paidDate) : undefined,
       },

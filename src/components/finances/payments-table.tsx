@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Link from 'next/link'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Search, Filter, DollarSign, TrendingUp, TrendingDown, Edit, Trash2 } from 'lucide-react'
 
@@ -245,9 +246,11 @@ export function PaymentsTable() {
                   </div>
                   
                   <div className="flex items-center space-x-2 ml-4">
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <Link href={`/dashboard/finances/payments/${payment.id}/edit`}>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </Link>
                     <Button
                       variant="outline"
                       size="sm"

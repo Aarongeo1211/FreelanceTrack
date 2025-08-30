@@ -37,18 +37,23 @@ interface Worker {
   email?: string
 }
 
-export function PaymentForm() {
+interface PaymentFormProps {
+  payment?: any
+  isEditing?: boolean
+}
+
+export function PaymentForm({ payment, isEditing = false }: PaymentFormProps) {
   const router = useRouter()
   const [formData, setFormData] = useState<PaymentFormData>({
-    amount: 0,
-    type: 'INCOMING',
-    status: 'PENDING',
-    description: '',
-    clientId: '',
-    projectId: '',
-    workerId: '',
-    dueDate: '',
-    paidDate: '',
+    amount: payment?.amount || 0,
+    type: payment?.type || 'INCOMING',
+    status: payment?.status || 'PENDING',
+    description: payment?.description || '',
+    clientId: payment?.clientId || '',
+    projectId: payment?.projectId || '',
+    workerId: payment?.workerId || '',
+    dueDate: payment?.dueDate ? new Date(payment.dueDate).toISOString().split('T')[0] : '',
+    paidDate: payment?.paidDate ? new Date(payment.paidDate).toISOString().split('T')[0] : '',
   })
   const [clients, setClients] = useState<Client[]>([])
   const [projects, setProjects] = useState<Project[]>([])
@@ -110,8 +115,8 @@ export function PaymentForm() {
         paidDate: formData.paidDate || undefined,
       }
 
-      const response = await fetch('/api/payments', {
-        method: 'POST',
+      const response = await fetch(isEditing ? `/api/payments/${payment.id}` : '/api/payments', {
+        method: isEditing ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -134,7 +139,7 @@ export function PaymentForm() {
   return (
     <Card className="max-w-2xl">
       <CardHeader>
-        <CardTitle>Record New Payment</CardTitle>
+        <CardTitle>{isEditing ? 'Edit Payment' : 'Record New Payment'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -325,7 +330,7 @@ export function PaymentForm() {
               type="submit"
               disabled={isLoading}
             >
-              {isLoading ? 'Saving...' : 'Record Payment'}
+              {isLoading ? 'Saving...' : isEditing ? 'Update Payment' : 'Record Payment'}
             </Button>
           </div>
         </form>

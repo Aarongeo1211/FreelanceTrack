@@ -6,11 +6,11 @@ import { z } from 'zod'
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  address: z.string().optional(),
-  notes: z.string().optional(),
+  email: z.string().email('Invalid email format').optional().or(z.literal('').transform(() => undefined)),
+  phone: z.string().optional().or(z.literal('').transform(() => undefined)),
+  company: z.string().optional().or(z.literal('').transform(() => undefined)),
+  address: z.string().optional().or(z.literal('').transform(() => undefined)),
+  notes: z.string().optional().or(z.literal('').transform(() => undefined)),
 })
 
 export async function GET(
