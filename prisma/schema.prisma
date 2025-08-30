@@ -25,6 +25,7 @@ model User {
   tasks     Task[]
   workers   Worker[]
   payments  Payment[]
+  brandingSettings BrandingSettings?
 
   @@map("users")
 }
@@ -198,4 +199,75 @@ enum PaymentStatus {
   PAID
   OVERDUE
   CANCELLED
+}
+
+model BrandingSettings {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // Business Information
+  businessName    String?
+  businessAddress String?
+  businessPhone   String?
+  businessEmail   String?
+  website         String?
+  taxNumber       String?
+  
+  // Branding
+  logoUrl         String?
+  primaryColor    String   @default("#3B82F6")
+  secondaryColor  String   @default("#1F2937")
+  accentColor     String   @default("#10B981")
+  fontFamily      String   @default("Inter")
+  
+  // Invoice Template Settings
+  defaultTemplate String   @default("modern")
+  showLogo        Boolean  @default(true)
+  showBusinessInfo Boolean @default(true)
+  invoicePrefix   String   @default("INV")
+  
+  // Payment Information
+  bankName        String?
+  accountNumber   String?
+  routingNumber   String?
+  paypalEmail     String?
+  
+  // Footer Information
+  footerText      String?
+  termsConditions String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("branding_settings")
+}
+
+model InvoiceTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  displayName String
+  description String?
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  
+  // Template Configuration
+  layout      String   // 'single-column', 'two-column', 'header-focused'
+  colorScheme String   // 'blue', 'green', 'purple', 'gray', 'custom'
+  headerStyle String   // 'minimal', 'bold', 'logo-focused'
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("invoice_templates")
+}
+
+enum InvoiceTemplateStyle {
+  MODERN
+  CLASSIC
+  MINIMAL
+  CORPORATE
+  CREATIVE
 }
