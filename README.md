@@ -6,7 +6,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4.17-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-> 🚀 **Live Demo**: [Coming Soon - Deploy with Vercel]
+> 🚀 **Live Demo**: https://freelance-track-nine.vercel.app/
 
 A comprehensive, production-ready web application designed specifically for freelancers to manage their clients, projects, tasks, team members, and finances in one centralized platform. Built with modern technologies and best practices.
 
